@@ -8,16 +8,16 @@
 #'   of the \code{habitatmap} that contain habitat or a regionally
 #'   important biotope (RIB).
 #'   \item \code{habitatmap_types}: a tibble with information on the
-#'   habitat and RIB types (HAB1, HAB2,..., HAB5) that occur within
+#'   habitat and RIB \link{types} (HAB1, HAB2,..., HAB5) that occur within
 #'   each polygon of \code{habitatmap_polygons}.
 #'   }
 #'
 #' The data source \code{habitatmap_stdized} is the processed version
-#' of the raw data source \code{habitatmap} (De Saeger et al., 2018).
+#' of the raw data source \code{habitatmap} (De Saeger et al., 2020).
 #' Every polygon in the \code{habitatmap} can consist of maximum 5
-#' different vegetation types. This information is stored in the
+#' different types. This information is stored in the
 #' columns 'HAB1', HAB2',..., 'HAB5' of the attribute table. The
-#' fraction of each vegetation type within the polygons is stored in
+#' fraction of each type within the polygons is stored in
 #' the columns 'PHAB1', 'PHAB2', ..., 'PHAB5'.
 #'
 #' The data source \code{habitatmap_stdized} is a GeoPackage, available at
@@ -33,17 +33,38 @@
 #' The processing of the \code{habitatmap_types} tibble included
 #' following steps:
 #' \itemize{
-#'   \item For some polygons the vegetation type is uncertain, and the
-#'   vegetation code in the raw \code{habitatmap} data source consists
+#'   \item For some polygons the type is uncertain, and the
+#'   type code in the raw \code{habitatmap} data source consists
 #'   of 2 or 3 possible types, separated with a ','. The different
-#'   possible vegetation types are split up and one row is created for
-#'   each of them. The variable \code{certain} will be \code{FALSE} if
-#'   the original code consists of 2 or 3 possible vegetation types, and \code{TRUE}
-#'   if only one vegetation type is provided.
-#'   \item For some polygons the original vegetation code in the
+#'   possible types are split up and one row is created for
+#'   each of them, with \code{phab} for each new row simply set to the original
+#'   value of \code{phab}.
+#'   The variable \code{certain} will be \code{FALSE} if
+#'   the original code consists of 2 or 3 possible types, and \code{TRUE}
+#'   if only one type is provided.
+#'   \item Some polygons contain both a standing water habitat type
+#'   and \code{rbbmr}:
+#'   \code{3130_rbbmr},
+#'   \code{3140_rbbmr},
+#'   \code{3150_rbbmr} and
+#'   \code{3160_rbbmr}.
+#'   Since \code{habitatmap_stdized_2020_v1}, the two
+#'   types \code{31xx} and \code{rbbmr} are split up and one row is
+#'   created for each of them, with \code{phab} for each new row simply
+#'   set to the original value of \code{phab}.
+#'   The variable \code{certain} in this case will be \code{TRUE} for both
+#'   types.
+#'   \item After those first two steps, a given polygon could contain the
+#'   same type with the same value for \code{certain} repeated several
+#'   times, e.g. when \code{31xx_rbbmr} is present with \code{phab} = yy\%
+#'   and \code{31xx} is present with \code{phab} = zz\%.
+#'   In that case the rows with the same \code{polygon_id}, \code{type}
+#'   and \code{certain} were gathered into one row and the respective
+#'   \code{phab} values were added up.
+#'   \item For some polygons the original type code in the
 #'   \code{habitatmap} was not consistent with general coding syntax or
-#'   with the type codes from the \code{\link{types}}. In that case the
-#'   code was adjusted.
+#'   with the type codes from the \code{\link{types}} data source. In that
+#'   case the code was adjusted.
 #'
 #'   }
 #'
@@ -67,29 +88,34 @@
 #'   \itemize{
 #'     \item \code{polygon_id}
 #'     \item \code{description_orig}: polygon description based on the
-#'     orginal vegetation codes in the raw \code{habitatmap}}
+#'     orginal type codes in the raw \code{habitatmap}}
 #'   }
 #'   \itemize{
 #'   \item \code{habitatmap_types}: a tibble with following variables
 #'   \itemize{
 #'     \item \code{polygon_id}
-#'     \item \code{code_orig}: original vegetation code in raw \code{habitatmap}.
-#'     \item \code{phab}: proportion of polygon covered by type, as a percentage.
-#'     \item \code{certain}: \code{TRUE} when vegetation type is certain and
-#'      \code{FALSE} when vegetation type is uncertain.
 #'     \item \code{type}: habitat or RIB type listed in \code{\link{types}}.
+#'     \item \code{certain}: \code{TRUE} when the type is certain and
+#'      \code{FALSE} when the type is uncertain.
+#'     \item \code{code_orig}: original type code in raw \code{habitatmap}.
+#'     \item \code{phab}: proportion of polygon covered by type, as a percentage.
 #'     }
+#'     Since version \code{habitatmap_stdized_2020_v1}, rows are unique only
+#'     by the combination of the \code{polygon_id}, \code{type} and
+#'     \code{certain} columns.
 #'     }
+#'
 #'
 #' @family functions involved in processing the 'habitatmap' data source
 #'
 #' @references
 #'
-#' De Saeger S., Guelinckx R., Oosterlynck P., De Bruyn A., Debusschere K., Dhaluin P.,
-#' Erens R., Hendrickx P., Hendrix R., Hennebel D., et al. (2018). Biologische
-#' Waarderingskaart en Natura 2000 Habitatkaart: Uitgave 2018. Rapporten van het
-#' Instituut voor Natuur- en Bosonderzoek. Instituut voor Natuur- en Bosonderzoek (INBO).
-#' \doi{10.21436/inbor.15138099}.
+#' De Saeger, S., Guelinckx, R., Oosterlynck, P., De Bruyn, A., Debusschere, K.,
+#' Dhaluin, P., Erens, R., Hendrickx, P., Hennebel, D., Jacobs, I., Kumpen, M.,
+#' Op De Beeck, J., Spanhove, T., Tamsyn, W., Van Oost, F., Van Dam, G.,
+#' Van Hove, M., Wils, C., Paelinckx, D. (2020). Biologische Waarderingskaart
+#' en Natura 2000 Habitatkaart, uitgave 2020. (Rapporten van het Instituut voor Natuur- en Bosonderzoek; Nr. 35). Instituut voor Natuur- en Bosonderzoek (INBO).
+#' \doi{10.21436/inbor.18840851}.
 #'
 #' @examples
 #' \dontrun{
@@ -112,7 +138,10 @@
 #' read_sf
 #' st_crs<-
 #' @importFrom rlang .data
-#' @importFrom dplyr %>% mutate
+#' @importFrom dplyr
+#' %>%
+#' mutate
+#' relocate
 #' @importFrom assertthat
 #' assert_that
 #' is.string
@@ -120,9 +149,11 @@
 read_habitatmap_stdized <-
     function(file = file.path(fileman_up("n2khab_data"),
                               "20_processed/habitatmap_stdized/habitatmap_stdized.gpkg"),
-             version = "habitatmap_stdized_2018_v2"){
+             version = c("habitatmap_stdized_2020_v1",
+                         "habitatmap_stdized_2018_v2",
+                         "habitatmap_stdized_2018_v1")){
 
-        assert_that(is.string(version))
+        version <- match.arg(version)
 
         habmap_polygons <- read_sf(file,
                                    "habitatmap_polygons")
@@ -155,6 +186,14 @@ read_habitatmap_stdized <-
                                   )
                     )
 
+        if (grepl("2018", version)) {
+            habmap_types <-
+                habmap_types %>%
+                relocate(.data$polygon_id,
+                         .data$type,
+                         .data$certain)
+        }
+
         if (version == "habitatmap_stdized_2018_v1") {
 
             result <- list(habitatmap_polygons = habmap_polygons,
@@ -184,12 +223,13 @@ read_habitatmap_stdized <-
 #'   CRS (EPSG-code \href{https://epsg.io/31370}{31370}) with all polygons
 #'   that contain standing water types (habitat or RIB).
 #'   \item \code{watersurfaces_types}: a tibble with information on the
-#'   standing water types (HAB1, HAB2,..., HAB5) that occur within
+#'   standing water \link{types} (HAB1, HAB2,..., HAB5) that occur within
 #'   each polygon of \code{watersurfaces_polygons}.
 #'   }
 #'
 #' The data source \code{watersurfaces_hab} is a combination of \code{habitatmap_stdized} (see
-#' \code{\link{read_habitatmap_stdized}}) and the \href{https://http://www.geopunt.be/catalogus/datasetfolder/10e87ad3-8235-40e0-8269-42c3c96a884d}{watersurface map of Flanders}.
+#' \code{\link{read_habitatmap_stdized}}) and the
+#' \href{https://doi.org/10.5281/zenodo.3386857}{watersurface map of Flanders}.
 #' It contains all standing water types in Flanders.
 #'
 #'
@@ -233,10 +273,10 @@ read_habitatmap_stdized <-
 #'   \item \code{watersurfaces_types}: a tibble with following variables:
 #'   \itemize{
 #'     \item \code{polygon_id}
-#'     \item \code{code_orig}: original vegetation code in raw \code{habitatmap}.
-#'     \item \code{certain}: \code{TRUE} when vegetation type is certain and
-#'      \code{FALSE} when vegetation type is uncertain.
 #'     \item \code{type}: habitat or RIB type listed in \code{\link{types}}.
+#'     \item \code{certain}: \code{TRUE} when the type is certain and
+#'      \code{FALSE} when the type is uncertain.
+#'     \item \code{code_orig}: original type code in raw \code{habitatmap}.
 #'     }
 #'     }
 #'
@@ -246,18 +286,19 @@ read_habitatmap_stdized <-
 #'
 #' @references
 #' \itemize{
-#' \item Packet J., Scheers K., Smeekens V., Leyssen A., Wils C. & Denys L.
-#' (2018).
-#' Watervlakken versie 1.0: polygonenkaart van stilstaand water in Vlaanderen.
-#' Een nieuw instrument voor onderzoek, water-, milieu- en natuurbeleid.
-#' Rapporten van het Instituut voor Natuur- en Bosonderzoek 2018 (14).
-#' Instituut voor Natuur- en Bosonderzoek, Brussel.
-#' \doi{10.21436/inbor.14178464}.
-#' \item De Saeger S., Guelinckx R., Oosterlynck P., De Bruyn A., Debusschere K., Dhaluin P.,
-#' Erens R., Hendrickx P., Hendrix R., Hennebel D., et al. (2018). Biologische
-#' Waarderingskaart en Natura 2000 Habitatkaart: Uitgave 2018. Rapporten van het
-#' Instituut voor Natuur- en Bosonderzoek. Instituut voor Natuur- en Bosonderzoek (INBO).
-#' \doi{10.21436/inbor.15138099}.
+#' \item Leyssen A., Scheers K., Smeekens V., Wils C., Packet J., De Knijf G. &
+#' Denys L. (2020).
+#' Watervlakken versie 1.1: polygonenkaart van stilstaand water in Vlaanderen.
+#' Uitgave 2020. Rapporten van het Instituut voor Natuur- en Bosonderzoek 2020
+#' (40). Instituut voor Natuur en Bosonderzoek, Brussel.
+#' \doi{10.21436/inbor.19088385}.
+#' \item De Saeger, S., Guelinckx, R., Oosterlynck, P., De Bruyn, A., Debusschere, K.,
+#' Dhaluin, P., Erens, R., Hendrickx, P., Hennebel, D., Jacobs, I., Kumpen, M.,
+#' Op De Beeck, J., Spanhove, T., Tamsyn, W., Van Oost, F., Van Dam, G.,
+#' Van Hove, M., Wils, C., Paelinckx, D. (2020). Biologische Waarderingskaart
+#' en Natura 2000 Habitatkaart, uitgave 2020. (Rapporten van het Instituut voor
+#' Natuur- en Bosonderzoek; Nr. 35). Instituut voor Natuur- en Bosonderzoek (INBO).
+#' \doi{10.21436/inbor.18840851}.
 #' }
 #'
 #' @examples
@@ -286,6 +327,7 @@ read_habitatmap_stdized <-
 #' mutate
 #' mutate_at
 #' vars
+#' relocate
 #' @importFrom assertthat
 #' assert_that
 #' is.string
@@ -294,9 +336,12 @@ read_watersurfaces_hab <-
     function(file = file.path(fileman_up("n2khab_data"),
                               "20_processed/watersurfaces_hab/watersurfaces_hab.gpkg"),
              interpreted = FALSE,
-             version = "watersurfaces_hab_v3"){
+             version = c("watersurfaces_hab_v4",
+                         "watersurfaces_hab_v3",
+                         "watersurfaces_hab_v2",
+                         "watersurfaces_hab_v1")){
 
-        assert_that(is.string(version))
+        version <- match.arg(version)
 
         watersurfaces_polygons <- read_sf(file,
                                    "watersurfaces_hab_polygons")
@@ -332,7 +377,10 @@ read_watersurfaces_hab <-
                     type = factor(.data$type,
                                   levels = levels(types$type)
                                   )
-                    )
+                    ) %>%
+            relocate(.data$polygon_id,
+                     .data$type,
+                     .data$certain)
 
         if (version %in% c("watersurfaces_hab_v1", "watersurfaces_hab_v2")) {
 
@@ -697,7 +745,7 @@ read_watersurfaces <-
 
 #' Return the data source \code{habitatmap} as an \code{sf} multipolygon layer
 #'
-#' Returns the raw data source \code{habitatmap} (De Saeger et al., 2018)
+#' Returns the raw data source \code{habitatmap} (De Saeger et al., 2020)
 #' as a standardized \code{sf} multipolygon layer
 #' (tidyverse-styled, internationalized) in the Belgian Lambert 72 CRS
 #' (EPSG-code \href{https://epsg.io/31370}{31370}).
@@ -705,7 +753,10 @@ read_watersurfaces <-
 #' takes a bit longer than usual to run.
 #'
 #' @param filter_hab If \code{TRUE} only polygons that (partially) contain habitat or a regionally
-#' important biotope (RIB) are returned. The default value is \code{FALSE}.
+#' important biotope (RIB) are returned. The default value is \code{FALSE}. This
+#' requires the corresponding version of the processed data source
+#' \code{habitatmap_stdized} to be present in its default location inside the
+#' \code{n2khab_data} folder.
 #'
 #' @inheritParams read_habitatmap_stdized
 #'
@@ -717,11 +768,12 @@ read_watersurfaces <-
 #'
 #' @references
 #'
-#' De Saeger S., Guelinckx R., Oosterlynck P., De Bruyn A., Debusschere K., Dhaluin P.,
-#' Erens R., Hendrickx P., Hendrix R., Hennebel D., et al. (2018). Biologische
-#' Waarderingskaart en Natura 2000 Habitatkaart: Uitgave 2018. Rapporten van het
-#' Instituut voor Natuur- en Bosonderzoek. Instituut voor Natuur- en Bosonderzoek (INBO).
-#' \doi{10.21436/inbor.15138099}.
+#' De Saeger, S., Guelinckx, R., Oosterlynck, P., De Bruyn, A., Debusschere, K.,
+#' Dhaluin, P., Erens, R., Hendrickx, P., Hennebel, D., Jacobs, I., Kumpen, M.,
+#' Op De Beeck, J., Spanhove, T., Tamsyn, W., Van Oost, F., Van Dam, G.,
+#' Van Hove, M., Wils, C., Paelinckx, D. (2020). Biologische Waarderingskaart
+#' en Natura 2000 Habitatkaart, uitgave 2020. (Rapporten van het Instituut voor Natuur- en Bosonderzoek; Nr. 35). Instituut voor Natuur- en Bosonderzoek (INBO).
+#' \doi{10.21436/inbor.18840851}.
 #'
 #' @examples
 #' \dontrun{
@@ -754,10 +806,37 @@ read_watersurfaces <-
 #'
 read_habitatmap <-
     function(file = file.path(fileman_up("n2khab_data"), "10_raw/habitatmap"),
-             filter_hab = FALSE){
+             filter_hab = FALSE,
+             version = c("habitatmap_2020",
+                         "habitatmap_2018")){
 
         assert_that(file.exists(file))
         assert_that(is.flag(filter_hab), noNA(filter_hab))
+        version <- match.arg(version)
+
+        if (filter_hab) {
+            # version control: version habitatmap == version habitatmap_stdized
+            xxh64sum_habitatmap_stdized_present <- xxh64sum(file.path(
+                fileman_up("n2khab_data"),
+                "20_processed/habitatmap_stdized/habitatmap_stdized.gpkg"))
+
+            if (version == "habitatmap_2020") {
+                xxh64sum_habitatmap_stdized_expected <- "3109c26f0a27a0f3"
+            } else {
+                xxh64sum_habitatmap_stdized_expected <- c("b80f469f33636c8b","8e9c4e09f5f67c3e")
+            }
+
+            if (!(xxh64sum_habitatmap_stdized_present %in%
+                  xxh64sum_habitatmap_stdized_expected)) {
+                stop("You are trying to use habitatmap version '", version,"' ",
+                     "with another version of habitatmap_stdized. ",
+                     "Specify the correct version as argument (version =) ",
+                     "and add the corresponding files under ",
+                     "'n2khab_data/10_raw/habitatmap' and ",
+                     "'n2khab_data/20_processed/habitatmap_stdized'.",
+                     call. = FALSE)
+            }
+        }
 
         habitatmap <- read_sf(file,
                               "habitatmap")
@@ -797,7 +876,13 @@ read_habitatmap <-
         if (filter_hab) {
 
             # we only select polygons with habitat or RIB, i.e. polygons in habitatmap_stdized data source
-            hab_stdized <- read_habitatmap_stdized()
+            if (xxh64sum_habitatmap_stdized_present == "8e9c4e09f5f67c3e") {
+                # 2018_v1
+                hab_stdized <- read_habitatmap_stdized(version = "habitatmap_stdized_2018_v1")
+            } else {
+                hab_stdized <- read_habitatmap_stdized()
+            }
+
             hab_stdized <- hab_stdized$habitatmap_polygons
 
             habitatmap <- habitatmap %>%
@@ -833,6 +918,8 @@ read_habitatmap <-
 #' By default, occurrences of type \code{7220} are dropped because a more
 #' reliable data source is available for this habitat type (see \code{drop_7220}
 #' argument).
+#' Note: a \link[=types]{type} is a habitat (sub)type or a regionally
+#' important biotope (RIB).
 #'
 #' \code{habitatmap_terr} was derived from \code{habitatmap_stdized} as
 #' follows:
@@ -904,7 +991,7 @@ read_habitatmap <-
 #'   \itemize{
 #'     \item \code{polygon_id}
 #'     \item \code{description_orig}: polygon description based on the
-#'     original vegetation codes in the \code{habitatmap} data source
+#'     original type codes in the \code{habitatmap} data source
 #'     \item \code{description}: based on \code{description_orig} but with the
 #'     interpreted type codes
 #'     \item \code{source}: states where \code{description} comes from: either
@@ -915,13 +1002,16 @@ read_habitatmap <-
 #'   \code{habitatmap_stdized}):
 #'   \itemize{
 #'     \item \code{polygon_id}
+#'     \item \code{type}: the interpreted habitat or RIB type
+#'     \item \code{certain}
 #'     \item \code{code_orig}
 #'     \item \code{phab}
-#'     \item \code{certain}
-#'     \item \code{type}: the interpreted habitat or RIB type
 #'     \item \code{source}: states where \code{type} comes from: either
 #'     \code{habitatmap_stdized} or \code{habitatmap_stdized + interpretation}
 #'     }
+#'     Since version \code{habitatmap_terr_2020_v1}, rows are unique only
+#'     by the combination of the \code{polygon_id}, \code{type} and
+#'     \code{certain} columns.
 #'     }
 #'
 #' @family functions involved in processing the 'habitatmap' data source
@@ -958,16 +1048,19 @@ read_habitatmap <-
 #' %>%
 #' mutate
 #' filter
+#' relocate
 read_habitatmap_terr <-
     function(file = file.path(fileman_up("n2khab_data"),
                               "20_processed/habitatmap_terr/habitatmap_terr.gpkg"),
              keep_aq_types = TRUE,
              drop_7220 = TRUE,
-             version = "habitatmap_terr_2018_v2"){
+             version = c("habitatmap_terr_2020_v1",
+                         "habitatmap_terr_2018_v2",
+                         "habitatmap_terr_2018_v1")){
 
         assert_that(is.flag(keep_aq_types), noNA(keep_aq_types))
         assert_that(is.flag(drop_7220), noNA(drop_7220))
-        assert_that(is.string(version))
+        version <- match.arg(version)
 
         habmap_terr_polygons <- read_sf(file,
                                    "habitatmap_terr_polygons")
@@ -1025,6 +1118,14 @@ read_habitatmap_terr <-
             # note that no polygons need to be discarded: 7220 never occurred
             # alone
         }
+
+        if (grepl("2018", version)) {
+            habmap_terr_types <-
+                habmap_terr_types %>%
+                relocate(.data$polygon_id,
+                         .data$type,
+                         .data$certain)
+            }
 
         if (version == "habitatmap_terr_2018_v1") {
             result <- list(habitatmap_terr_polygons = habmap_terr_polygons,
@@ -1233,11 +1334,11 @@ read_habitatstreams <-
 #'     \item \code{name}: site name.
 #'     \item \code{system_type}: environmental typology of `7220`: `mire`,
 #'     `rivulet` or `unknown` (non-`7220` types are `NA`)
-#'     \item \code{code_orig}: original vegetation code in raw
+#'     \item \code{code_orig}: original type code in raw
 #'     \code{habitatsprings}.
 #'     \item \code{type}: habitat type listed in \code{\link{types}}.
-#'     \item \code{certain}: \code{TRUE} when vegetation type is certain and
-#'      \code{FALSE} when vegetation type is uncertain.
+#'     \item \code{certain}: \code{TRUE} when the type is certain and
+#'      \code{FALSE} when the type is uncertain.
 #'     \item \code{unit_id}: population unit id for large scale sampling
 #'     events.
 #'     Spatially close points have the same value.
@@ -1566,4 +1667,3 @@ if (references) {
         return(habitatquarries)
 
     }
-
